@@ -3,6 +3,7 @@ set(src
   metrics.c
   reload.c
   register.c
+  input_control.c
   )
 
 include_directories(${MONKEY_INCLUDE_DIR})
