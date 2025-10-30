@@ -54,12 +54,13 @@ static struct flb_input_instance *find_input_by_name(const char *name,
 
 /*
  * Extract input name from the URI path.
- * Expected format: /api/v2/input/{input_name}/pause or /api/v2/input/{input_name}/resume
+ * Expected format: /api/v2/input/pause/{input_name} or /api/v2/input/resume/{input_name}
  * Returns a newly allocated string with the input name, or NULL on error.
  */
 static flb_sds_t extract_input_name_from_uri(const char *uri)
 {
-    const char *prefix = "/api/v2/input/";
+    const char *prefix_pause = "/api/v2/input/pause/";
+    const char *prefix_resume = "/api/v2/input/resume/";
     const char *start;
     const char *end;
     flb_sds_t name;
@@ -71,16 +72,18 @@ static flb_sds_t extract_input_name_from_uri(const char *uri)
     }
 
     /* Check if URI starts with the expected prefix */
-    prefix_len = strlen(prefix);
-    if (strncmp(uri, prefix, prefix_len) != 0) {
-        return NULL;
+    prefix_len = strlen(prefix_pause);
+    if (strncmp(uri, prefix_pause, prefix_len) != 0) {
+        prefix_len = strlen(prefix_resume);
+        if (strncmp(uri, prefix_resume, prefix_len) != 0) {
+            return NULL;
+        }
     }
 
     /* Find the start of the input name */
     start = uri + prefix_len;
 
-    /* Find the end of the input name (next slash) */
-    end = strchr(start, '/');
+    end = strchr(start, '\0');
     if (!end) {
         return NULL;
     }
@@ -264,11 +267,11 @@ static void cb_input_resume(mk_request_t *request, void *data)
  */
 int api_v2_input_control(struct flb_hs *hs)
 {
-    /* Register pause endpoint - matches /api/v2/input/{input_name}/pause */
-    mk_vhost_handler(hs->ctx, hs->vid, "/api/v2/input/*/pause", cb_input_pause, hs);
+    /* Register pause endpoint - matches /api/v2/input/pause/{input_name} */
+    mk_vhost_handler(hs->ctx, hs->vid, "/api/v2/input/pause/.*", cb_input_pause, hs);
 
-    /* Register resume endpoint - matches /api/v2/input/{input_name}/resume */
-    mk_vhost_handler(hs->ctx, hs->vid, "/api/v2/input/*/resume", cb_input_resume, hs);
+    /* Register resume endpoint - matches /api/v2/input/resume/{input_name} */
+    mk_vhost_handler(hs->ctx, hs->vid, "/api/v2/input/resume/.*", cb_input_resume, hs);
 
     return 0;
 }
